@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>造句大冒险 | 小学五年级语文平台跳跃游戏</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: ZCOOL KuaiLe & Noto Sans SC 打造圆润可爱的中文童趣字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --font-display: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
+      --font-body: 'Noto Sans SC', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-body);
+      background: linear-gradient(180deg, #60a5fa 0%, #bae6fd 58%, #86efac 100%);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: var(--font-display);
+      letter-spacing: 0.03em;
+    }
+
+    /* 3D 立体卡通按钮 */
+    .btn-cartoon {
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+    }
+    .btn-cartoon:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.2);
+    }
+    .btn-cartoon:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    /* 性别选择卡片 */
+    .gender-card {
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 4px solid #e2e8f0;
+    }
+    .gender-card:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+    .gender-card.selected-boy {
+      border-color: #3b82f6;
+      background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+      box-shadow: 0 8px 0 #2563eb;
+      transform: translateY(-4px) scale(1.03);
+    }
+    .gender-card.selected-girl {
+      border-color: #ec4899;
+      background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%);
+      box-shadow: 0 8px 0 #db2777;
+      transform: translateY(-4px) scale(1.03);
+    }
+
+    /* 漂浮云朵动画 */
+    @keyframes floatCloud {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float {
+      animation: floatCloud 4s ease-in-out infinite;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.86) translateY(14px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop {
+      animation: popIn 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-7px); }
+      40%, 80% { transform: translateX(7px); }
+    }
+    .animate-shake {
+      animation: shake 0.38s ease-in-out;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 打印成绩单专用样式 */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #statsModalContent, #statsModalContent * {
+        visibility: visible;
+      }
+      #statsModalContent {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none !important;
+        border: 3px solid #334155 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="relative overflow-hidden">
+
+  <!-- ==================== 右上角音效开关 ==================== -->
+  <div class="fixed top-3 right-3 z-50 flex items-center gap-2 no-print">
+    <button id="soundToggleBtn" onclick="toggleSound()" aria-label="切换音效"
+      class="btn-cartoon bg-amber-400 hover:bg-amber-300 text-amber-950 font-black px-3.5 py-2 rounded-2xl border-2 border-amber-600 flex items-center gap-1.5 text-sm shadow-md cursor-pointer">
+      <span id="soundIcon" class="text-lg">🔊</span>
+      <span id="soundLabel" class="hidden sm:inline text-xs">音效开</span>
+    </button>
+  </div>
+
+  <!-- ==================== 1. 学生信息与性别选择界面 ==================== -->
+  <div id="registrationScreen" class="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <!-- 童话背景装饰：彩虹、白云与绿草山丘 -->
+    <div class="pointer-events-none fixed inset-0 overflow-hidden">
+      <div class="absolute top-8 left-8 text-white/85 text-6xl animate-float">☁️</div>
+      <div class="absolute top-16 right-16 text-white/80 text-7xl animate-float" style="animation-delay: 1.4s;">☁️</div>
+      <div class="absolute top-12 left-1/2 -translate-x-1/2 text-6xl opacity-75">🌈</div>
+      <div class="absolute bottom-0 left-0 right-0 h-28 bg-emerald-500 rounded-t-[100%] scale-x-125 border-t-8 border-emerald-600"></div>
+    </div>
+
+    <!-- 注册卡片 -->
+    <div class="relative bg-white/95 backdrop-blur-md w-full max-w-xl rounded-3xl border-4 border-sky-400 shadow-2xl p-5 sm:p-7 my-auto animate-pop">
+      <!-- 标题区 -->
+      <div class="text-center mb-4">
+        <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 border-2 border-amber-400 px-3.5 py-1 rounded-full text-xs sm:text-sm font-black mb-2">
+          <span>📚</span>
+          <span>小学五年级语文 • 趣味造句闯关</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-sky-600 drop-shadow-sm">
+          造句大冒险！
+        </h1>
+        <p class="text-slate-600 font-bold text-sm sm:text-base mt-1">
+          顶开神秘问号方块，收集魔法词语，成为造句小达人！
+        </p>
+      </div>
+
+      <!-- 表单输入区 -->
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <!-- 学生姓名 -->
+          <div>
+            <label for="studentNameInput" class="block text-slate-700 font-black text-sm mb-1">
+              ✏️ 学生姓名
+            </label>
+            <input id="studentNameInput" type="text" maxlength="20"
+              placeholder="例如：林子轩"
+              class="w-full px-4 py-2.5 rounded-2xl border-3 border-slate-300 focus:border-sky-500 focus:outline-none font-bold text-slate-800 bg-slate-50 transition-colors" />
+          </div>
+
+          <!-- 班级 -->
+          <div>
+            <label for="studentClassInput" class="block text-slate-700 font-black text-sm mb-1">
+              🏫 所在班级
+            </label>
+            <input id="studentClassInput" type="text" maxlength="20"
+              placeholder="例如：五年级1班"
+              class="w-full px-4 py-2.5 rounded-2xl border-3 border-slate-300 focus:border-sky-500 focus:outline-none font-bold text-slate-800 bg-slate-50 transition-colors" />
+          </div>
+        </div>
+
+        <!-- 性别选择（仅限男或女，采用精美卡通SVG立绘图标） -->
+        <div>
+          <label class="block text-slate-700 font-black text-sm mb-2 text-center">
+            ✨ 选择你的冒险小主角（仅限男或女）
+          </label>
+          <div class="grid grid-cols-2 gap-4">
+            <!-- 男孩立绘卡片 -->
+            <button type="button" id="selectBoyBtn" onclick="selectGender('boy')"
+              class="gender-card rounded-3xl p-3 sm:p-4 bg-white flex flex-col items-center justify-center cursor-pointer focus:outline-none">
+              <svg class="w-24 h-24 sm:w-28 sm:h-28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="52" fill="#DBEAFE" />
+                <!-- 蓝色小冒险家上衣 -->
+                <path d="M30 106C30 89 43 79 60 79C77 79 90 89 90 106" fill="#2563EB" stroke="#1E3A8A" stroke-width="3" stroke-linecap="round"/>
+                <!-- 黄色背带与铅笔徽章 -->
+                <path d="M42 82L45 105M78 82L75 105" stroke="#F59E0B" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="60" cy="94" r="6" fill="#FDE047" stroke="#CA8A04" stroke-width="2"/>
+                <!-- 脖子与耳朵 -->
+                <rect x="53" y="68" width="14" height="14" rx="6" fill="#FDBA74"/>
+                <circle cx="33" cy="52" r="7" fill="#FDBA74" stroke="#9A3412" stroke-width="2.5"/>
+                <circle cx="87" cy="52" r="7" fill="#FDBA74" stroke="#9A3412" stroke-width="2.5"/>
+                <!-- 脸蛋 -->
+                <rect x="35" y="25" width="50" height="48" rx="22" fill="#FED7AA" stroke="#9A3412" stroke-width="3"/>
+                <!-- 帅气短发 -->
+                <path d="M33 43C32 23 48 15 62 17C76 15 89 24 87 43C83 34 75 31 67 33C60 28 50 28 44 34C39 32 35 36 33 43Z" fill="#1E293B" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round"/>
+                <!-- 红色小探险帽 -->
+                <path d="M38 25C44 14 76 14 82 25" fill="#EF4444" stroke="#991B1B" stroke-width="2.5"/>
+                <path d="M56 23H92C94 23 95 26 92 27H56V23Z" fill="#DC2626" stroke="#991B1B" stroke-width="2"/>
+                <!-- 亮晶晶的眼睛 -->
+                <circle cx="48" cy="49" r="4.5" fill="#0F172A"/>
+                <circle cx="49.5" cy="47.5" r="1.5" fill="#FFFFFF"/>
+                <circle cx="72" cy="49" r="4.5" fill="#0F172A"/>
+                <circle cx="73.5" cy="47.5" r="1.5" fill="#FFFFFF"/>
+                <!-- 红晕与微笑 -->
+                <ellipse cx="42" cy="56" rx="4.5" ry="2.5" fill="#FB7185" opacity="0.6"/>
+                <ellipse cx="78" cy="56" rx="4.5" ry="2.5" fill="#FB7185" opacity="0.6"/>
+                <path d="M52 58C55 63 65 63 68 58" stroke="#9A3412" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <span class="mt-2 font-display font-bold text-xl text-blue-700">男（小勇士）</span>
+            </button>
+
+            <!-- 女孩立绘卡片 -->
+            <button type="button" id="selectGirlBtn" onclick="selectGender('girl')"
+              class="gender-card rounded-3xl p-3 sm:p-4 bg-white flex flex-col items-center justify-center cursor-pointer focus:outline-none">
+              <svg class="w-24 h-24 sm:w-28 sm:h-28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="52" fill="#FCE7F3" />
+                <!-- 可爱双马尾 -->
+                <circle cx="26" cy="44" r="12" fill="#3B2F2F" stroke="#1F1919" stroke-width="2.5"/>
+                <circle cx="94" cy="44" r="12" fill="#3B2F2F" stroke="#1F1919" stroke-width="2.5"/>
+                <!-- 粉色蝴蝶结 -->
+                <circle cx="33" cy="36" r="4.5" fill="#EC4899"/>
+                <circle cx="87" cy="36" r="4.5" fill="#EC4899"/>
+                <!-- 粉色小冒险裙装 -->
+                <path d="M30 106C30 89 43 79 60 79C77 79 90 89 90 106" fill="#EC4899" stroke="#9D174D" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="60" cy="94" r="7" fill="#FDE047" stroke="#CA8A04" stroke-width="2"/>
+                <!-- 脖子与脸蛋 -->
+                <rect x="53" y="68" width="14" height="14" rx="6" fill="#FDBA74"/>
+                <rect x="35" y="25" width="50" height="48" rx="22" fill="#FED7AA" stroke="#9A3412" stroke-width="3"/>
+                <!-- 齐刘海与发箍 -->
+                <path d="M34 45C33 23 47 16 60 16C73 16 87 23 86 45C80 35 70 32 60 35C50 32 40 35 34 45Z" fill="#3B2F2F" stroke="#1F1919" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M38 28C46 18 74 18 82 28" stroke="#F43F5E" stroke-width="4" stroke-linecap="round"/>
+                <!-- 弯弯睫毛与大眼睛 -->
+                <circle cx="48" cy="49" r="4.5" fill="#0F172A"/>
+                <circle cx="49.5" cy="47.5" r="1.5" fill="#FFFFFF"/>
+                <path d="M42 46L44 48" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="72" cy="49" r="4.5" fill="#0F172A"/>
+                <circle cx="73.5" cy="47.5" r="1.5" fill="#FFFFFF"/>
+                <path d="M78 46L76 48" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+                <!-- 红晕与甜美笑容 -->
+                <ellipse cx="42" cy="56" rx="5" ry="2.8" fill="#F43F5E" opacity="0.65"/>
+                <ellipse cx="78" cy="56" rx="5" ry="2.8" fill="#F43F5E" opacity="0.65"/>
+                <path d="M52 58C55 63 65 63 68 58" stroke="#9A3412" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <span class="mt-2 font-display font-bold text-xl text-pink-600">女（小仙女）</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 表单提示框（不使用 alert()） -->
+        <div id="regErrorBox" class="hidden bg-rose-100 border-2 border-rose-400 text-rose-700 px-4 py-2 rounded-2xl text-sm font-bold text-center">
+        </div>
+
+        <!-- 开始闯关按钮 -->
+        <button onclick="startAdventure()"
+          class="btn-cartoon w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white font-display font-bold text-2xl border-2 border-emerald-700 flex items-center justify-center gap-2 cursor-pointer">
+          <span>🚀</span>
+          <span>开始造句大冒险！</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 游戏主画面与顶部实时统计 HUD ==================== -->
+  <div id="gameContainer" class="hidden fixed inset-0 w-full h-full">
+    <!-- 顶部实时统计信息栏 -->
+    <div class="fixed top-2 left-2 right-28 sm:right-32 z-30 flex flex-wrap items-center gap-2 pointer-events-none">
+      <!-- 学生信息徽章 -->
+      <div class="pointer-events-auto bg-white/95 backdrop-blur-sm border-3 border-sky-400 rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
+        <div id="hudAvatarBadge" class="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-sky-100 border-2 border-sky-400">
+          👦
+        </div>
+        <div class="leading-tight">
+          <div id="hudPlayerName" class="font-black text-slate-800 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px]">学生</div>
+          <div id="hudPlayerClass" class="font-bold text-slate-500 text-[11px]">五年级1班</div>
+        </div>
+      </div>
+
+      <!-- 爱心、积分、星星与正确率统计 -->
+      <div class="pointer-events-auto bg-white/95 backdrop-blur-sm border-3 border-amber-400 rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2.5 sm:gap-3">
+        <div id="hudLives" class="flex items-center gap-0.5 text-sm sm:text-base" title="生命值">
+          ❤️❤️❤️❤️❤️
+        </div>
+        <div class="h-5 w-0.5 bg-slate-200"></div>
+        <div class="flex items-center gap-1 font-display font-bold text-amber-600 text-sm sm:text-base" title="总得分">
+          <span>🏆</span>
+          <span id="hudScore">0</span>
+        </div>
+        <div class="flex items-center gap-1 font-display font-bold text-yellow-500 text-sm sm:text-base" title="收集的星星">
+          <span>⭐</span>
+          <span id="hudStars">0</span>
+        </div>
+        <div class="hidden md:flex items-center gap-1 font-extrabold text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+          <span>正确率:</span>
+          <span id="hudAccuracyVal">100%</span>
+        </div>
+      </div>
+
+      <!-- 当前关卡指示器与选关按钮 -->
+      <div class="pointer-events-auto bg-indigo-600 text-white border-3 border-indigo-800 rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
+        <span class="text-xs sm:text-sm font-display font-bold" id="hudStageTitle">第一关：关联词小达人</span>
+        <button onclick="openStageSelectModal()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-100 text-xs font-extrabold px-2 py-0.5 rounded-lg border border-indigo-400 cursor-pointer">
+          选关
+        </button>
+      </div>
+
+      <!-- 实时统计成绩单按钮 -->
+      <button onclick="openStatsModal(false)"
+        class="pointer-events-auto btn-cartoon bg-purple-500 hover:bg-purple-400 text-white border-2 border-purple-700 rounded-2xl px-3 py-1.5 font-extrabold text-xs sm:text-sm flex items-center gap-1 cursor-pointer">
+        <span>📊</span>
+        <span>统计成绩单</span>
+      </button>
+    </div>
+
+    <!-- 顶部浮动提示横幅 -->
+    <div id="toastBanner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 text-white px-5 py-2 rounded-full font-bold text-sm shadow-xl border-2 border-amber-400 pointer-events-none transition-all">
+    </div>
+
+    <!-- 2D 横版卡通平台跳跃画布 -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 底部触控/鼠标虚拟按键（适配平板与手机） -->
+    <div class="fixed bottom-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
+      <!-- 左右方向键 -->
+      <div class="flex items-center gap-3 pointer-events-auto">
+        <button id="btnTouchLeft"
+          class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/85 active:bg-sky-200 border-4 border-sky-500 shadow-lg flex items-center justify-center text-2xl sm:text-3xl font-black text-sky-700">
+          ◀
+        </button>
+        <button id="btnTouchRight"
+          class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/85 active:bg-sky-200 border-4 border-sky-500 shadow-lg flex items-center justify-center text-2xl sm:text-3xl font-black text-sky-700">
+          ▶
+        </button>
+      </div>
+
+      <!-- 桌面端按键提示 -->
+      <div class="hidden lg:flex items-center gap-2 bg-white/85 backdrop-blur-sm px-4 py-1.5 rounded-full border-2 border-slate-300 text-slate-700 font-bold text-xs">
+        <span>移动：⬅️ ➡️ 或 A / D • 跳跃：空格 / W / ⬆️ • 顶起所有“？”方块完成造句即可抵达终点城堡！</span>
+      </div>
+
+      <!-- 跳跃按键 -->
+      <div class="pointer-events-auto">
+        <button id="btnTouchJump"
+          class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-400/95 active:bg-amber-300 border-4 border-amber-600 shadow-lg flex flex-col items-center justify-center font-display font-bold text-amber-950">
+          <span class="text-xl sm:text-2xl leading-none">▲</span>
+          <span class="text-xs font-extrabold">跳跃</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 五年级造句挑战弹窗 ==================== -->
+  <div id="questionModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div id="questionCard" class="bg-white w-full max-w-2xl rounded-3xl border-4 border-amber-400 shadow-2xl p-5 sm:p-6 my-auto animate-pop">
+      <!-- 关卡主题标签与奖励 -->
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <span id="qTopicBadge" class="bg-sky-100 text-sky-800 border-2 border-sky-300 px-3 py-1 rounded-full text-xs font-black">
+          第一关：关联词小达人
+        </span>
+        <span class="bg-amber-100 text-amber-800 border-2 border-amber-300 px-3 py-1 rounded-full text-xs font-black">
+          答对 +100 分 🌟
+        </span>
+      </div>
+
+      <!-- 造句题目卡片 -->
+      <div class="bg-amber-50/70 border-3 border-amber-200 rounded-2xl p-4 mb-4">
+        <p id="qInstructionText" class="text-slate-700 font-extrabold text-sm sm:text-base mb-2">
+          请根据语境选择最恰当的关联词完成造句：
+        </p>
+        <div id="qExpressionText" class="font-bold text-lg sm:text-xl text-slate-900 bg-white border-2 border-amber-300 rounded-xl p-3 leading-relaxed">
+          题目内容
+        </div>
+      </div>
+
+      <!-- 模式 A：造句选择题（第一关、第二关、第四关） -->
+      <div id="qOptionsGrid" class="grid grid-cols-1 gap-2.5 mb-4">
+        <!-- 动态生成选项 -->
+      </div>
+
+      <!-- 模式 B：词句重组“词语排排坐”（第三关专属交互） -->
+      <div id="qSequenceBuilder" class="hidden mb-4">
+        <p class="text-xs sm:text-sm font-black text-indigo-700 mb-2">
+          👇 请按正确语序依次点击下方词语卡片，组成通顺优美的句子：
+        </p>
+        <!-- 已选句子拼接槽 -->
+        <div id="seqSelectedList" class="min-h-[58px] bg-indigo-50 border-2 border-dashed border-indigo-400 rounded-2xl p-2.5 mb-3 flex flex-wrap items-center gap-1.5">
+        </div>
+        <!-- 候选词语卡片池 -->
+        <div id="seqPoolList" class="flex flex-wrap gap-2">
+        </div>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="undoSequenceStep()"
+            class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-extrabold text-xs border border-amber-300 cursor-pointer">
+            ↩️ 撤销一词
+          </button>
+          <button type="button" onclick="resetSequenceSelection()"
+            class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-xs cursor-pointer">
+            🔄 全部重排
+          </button>
+          <button type="button" id="btnSubmitSequence" onclick="submitSequenceAnswer()" disabled
+            class="btn-cartoon px-4 py-1.5 rounded-xl bg-indigo-600 disabled:opacity-40 text-white font-extrabold text-sm border-2 border-indigo-800 cursor-pointer">
+            ✅ 提交造句
+          </button>
+        </div>
+      </div>
+
+      <!-- 造句解析与反馈区 -->
+      <div id="qFeedbackBox" class="hidden rounded-2xl p-4 mb-4 border-3">
+        <div class="flex items-start gap-2.5">
+          <span id="qFeedbackIcon" class="text-2xl">🎉</span>
+          <div class="w-full">
+            <h4 id="qFeedbackTitle" class="font-display font-bold text-lg">太棒了！</h4>
+            <p id="qModelSentence" class="text-sm font-black bg-white/80 rounded-xl px-3 py-1.5 my-1.5 border border-current/20"></p>
+            <p id="qFeedbackExplanation" class="text-xs sm:text-sm font-bold leading-relaxed"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 继续前进按钮 -->
+      <button id="qContinueBtn" onclick="closeQuestionModal()"
+        class="hidden btn-cartoon w-full py-3 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-display font-bold text-xl border-2 border-sky-700 cursor-pointer">
+        继续冒险前进 ➡️
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 关卡切换弹窗 ==================== -->
+  <div id="stageSelectModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl border-4 border-indigo-400 shadow-2xl p-6 animate-pop">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-display font-bold text-indigo-700">🗺️ 选择造句关卡</h2>
+        <button onclick="closeStageSelectModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 font-black text-slate-600 cursor-pointer">✕</button>
+      </div>
+      <div id="stageListContainer" class="space-y-3">
+        <!-- 动态生成关卡列表 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 5. 五年级造句小达人统计成绩单 ==================== -->
+  <div id="statsModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div id="statsModalContent" class="bg-white w-full max-w-2xl rounded-3xl border-4 border-purple-500 shadow-2xl p-5 sm:p-7 my-auto animate-pop max-h-[92vh] overflow-y-auto">
+      <!-- 成绩单头部 -->
+      <div class="flex items-center justify-between border-b-2 border-slate-100 pb-4 mb-4">
+        <div class="flex items-center gap-3">
+          <div id="statsAvatarIcon" class="w-14 h-14 rounded-2xl bg-sky-100 border-3 border-sky-400 flex items-center justify-center text-3xl">
+            👦
+          </div>
+          <div>
+            <span class="inline-block bg-purple-100 text-purple-800 text-xs font-black px-2.5 py-0.5 rounded-full mb-0.5">
+              小学五年级语文 • 造句小达人荣誉成绩单
+            </span>
+            <h2 id="statsStudentName" class="text-2xl font-display font-bold text-slate-800">学生姓名</h2>
+            <p class="text-sm font-bold text-slate-500">
+              所在班级：<span id="statsStudentClass" class="text-slate-700">五年级1班</span>
+            </p>
+          </div>
+        </div>
+        <button onclick="closeStatsModal()" class="no-print w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 font-black text-slate-600 cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- 通关/结束庆祝横幅 -->
+      <div id="statsCompletionBanner" class="hidden mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-amber-100 via-yellow-100 to-emerald-100 border-2 border-amber-400 text-center">
+        <h3 id="statsBannerTitle" class="font-display font-bold text-xl text-amber-800">🏆 恭喜你成为五年级造句小达人！</h3>
+        <p id="statsBannerSub" class="text-xs sm:text-sm font-bold text-slate-700 mt-0.5"></p>
+      </div>
+
+      <!-- 四项核心统计指标 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 text-center">
+          <div class="text-xs font-black text-amber-700">总得分</div>
+          <div id="statScoreVal" class="font-display font-bold text-2xl text-amber-600 mt-0.5">0</div>
+        </div>
+        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3 text-center">
+          <div class="text-xs font-black text-emerald-700">造句正确率</div>
+          <div id="statAccVal" class="font-display font-bold text-2xl text-emerald-600 mt-0.5">0%</div>
+        </div>
+        <div class="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-3 text-center">
+          <div class="text-xs font-black text-yellow-700">收集星星</div>
+          <div id="statStarsVal" class="font-display font-bold text-2xl text-yellow-600 mt-0.5">0</div>
+        </div>
+        <div class="bg-sky-50 border-2 border-sky-300 rounded-2xl p-3 text-center">
+          <div class="text-xs font-black text-sky-700">闯关用时</div>
+          <div id="statTimeVal" class="font-display font-bold text-2xl text-sky-600 mt-0.5">00:00</div>
+        </div>
+      </div>
+
+      <!-- 四大造句能力维度掌握度进度条 -->
+      <div class="mb-5">
+        <h3 class="font-display font-bold text-lg text-slate-800 mb-2.5 flex items-center gap-2">
+          <span>📈</span>
+          <span>四大造句能力维度掌握度</span>
+        </h3>
+        <div id="topicBreakdownList" class="space-y-2.5">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+
+      <!-- 优秀造句成果回顾 -->
+      <div class="mb-5">
+        <h3 class="font-display font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+          <span>✍️</span>
+          <span>本次解锁的优秀佳句积累</span>
+        </h3>
+        <div id="unlockedSentencesList" class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 space-y-1.5 max-h-36 overflow-y-auto text-xs sm:text-sm font-bold text-slate-700">
+          <p class="text-slate-400 text-center py-2">顶开问号方块答对造句题，即可在此收集你的佳句哦！</p>
+        </div>
+      </div>
+
+      <!-- 底部操作按钮 -->
+      <div class="no-print flex flex-wrap items-center justify-end gap-2.5 pt-2 border-t-2 border-slate-100">
+        <button onclick="window.print()"
+          class="btn-cartoon px-4 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-sm border-2 border-sky-700 flex items-center gap-1.5 cursor-pointer">
+          <span>🖨️</span>
+          <span>打印 / 保存成绩单</span>
+        </button>
+        <button onclick="restartFullGame()"
+          class="btn-cartoon px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-extrabold text-sm border-2 border-amber-600 flex items-center gap-1.5 cursor-pointer">
+          <span>🔄</span>
+          <span>再玩一次</span>
+        </button>
+        <button id="btnResumeFromStats" onclick="closeStatsModal()"
+          class="btn-cartoon px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm border-2 border-emerald-700 cursor-pointer">
+          继续游戏
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 游戏核心引擎与五年级造句题库 ==================== -->
+  <script>
+    /*************************************************************************
+     * 1. 小学五年级“造句”四大关卡完整题库
+     *************************************************************************/
+    const STAGE_NAMES = {
+      1: "第一关：关联词小达人",
+      2: "第二关：修辞手法魔法师",
+      3: "第三关：词句重组小能手",
+      4: "第四关：成语与情景扩句"
+    };
+
+    const TOPIC_LABELS = {
+      1: "1. 关联词运用造句",
+      2: "2. 修辞手法生动造句",
+      3: "3. 词句重组语序表达",
+      4: "4. 成语与情景扩句"
+    };
+
+    const QUESTION_BANK = {
+      // 第一关：关联词小达人
+      1: [
+        {
+          type: "mcq",
+          prompt: "请用恰当的关联词连接句子，使语义最准确：",
+          expr: "（      ）今天下起了倾盆大雨，（      ）同学们依然准时到达了学校。",
+          options: [
+            "A. 虽然……但是……（转折关系）",
+            "B. 因为……所以……（因果关系）",
+            "C. 只要……就……（条件关系）",
+            "D. 如果……就……（假设关系）"
+          ],
+          correctIndex: 0,
+          modelSentence: "虽然今天下起了倾盆大雨，但是同学们依然准时到达了学校。",
+          explanation: "前后分句意思相反（下雨与准时到校形成对比），属于转折关系，因此用“虽然……但是……”最准确！"
+        },
+        {
+          type: "mcq",
+          prompt: "下列哪一句使用关联词“不仅……而且……”造句最通顺、恰当？",
+          expr: "用【不仅……而且……】造句（递进关系）",
+          options: [
+            "A. 小明不仅喜欢踢足球，而且讨厌运动。",
+            "B. 桂花不仅香气迷人，而且可以做成美味的桂花糕。",
+            "C. 今天不仅天气晴朗，而且下起了鹅毛大雪。",
+            "D. 不仅他学习好，而且同学们都不喜欢他。"
+          ],
+          correctIndex: 1,
+          modelSentence: "桂花不仅香气迷人，而且可以做成美味的桂花糕。",
+          explanation: "“不仅……而且……”表示递进关系，后半句的意思要比前半句更进一层。B选项从香气写到用途，逻辑非常通顺！"
+        },
+        {
+          type: "mcq",
+          prompt: "请为下面的语境选择最合适的关联词完成造句：",
+          expr: "（      ）遇到再大的困难，我们（      ）不能轻言放弃。",
+          options: [
+            "A. 既然……就……",
+            "B. 即使……也……",
+            "C. 与其……不如……",
+            "D. 不是……而是……"
+          ],
+          correctIndex: 1,
+          modelSentence: "即使遇到再大的困难，我们也不能轻言放弃。",
+          explanation: "“即使……也……”表示假设与让步关系，强调在任何困难假设下都不会放弃，语气坚定有力。"
+        },
+        {
+          type: "mcq",
+          prompt: "用【与其……不如……】造句，下列哪一项表达最合理？",
+          expr: "用【与其……不如……】造句（取舍关系）",
+          options: [
+            "A. 与其周末在家无聊地看电视，不如去图书馆多读几本好书。",
+            "B. 与其认真完成作业，不如抄袭同学的答案。",
+            "C. 与其今天去公园，不如昨天已经去了。",
+            "D. 与其太阳从东边升起，不如从西边落下。"
+          ],
+          correctIndex: 0,
+          modelSentence: "与其周末在家无聊地看电视，不如去图书馆多读几本好书。",
+          explanation: "“与其……不如……”表示在两件事中舍弃前者、选择更积极的后者，A选项语义积极且语法完全正确！"
+        }
+      ],
+
+      // 第二关：修辞手法魔法师
+      2: [
+        {
+          type: "mcq",
+          prompt: "请选出运用了【拟人】修辞手法、写得最生动的一句话：",
+          expr: "把春风写活（拟人造句）",
+          options: [
+            "A. 春风吹过来，树叶动了。",
+            "B. 春风像妈妈的手一样温暖。",
+            "C. 温柔的春风轻轻唤醒了沉睡的小草，还帮柳树梳起了长长的辫子。",
+            "D. 春天来了，风很大。"
+          ],
+          correctIndex: 2,
+          modelSentence: "温柔的春风轻轻唤醒了沉睡的小草，还帮柳树梳起了长长的辫子。",
+          explanation: "“唤醒”、“梳辫子”把春风与柳树赋予了人的动作和情感，这就是拟人句；B选项使用的是比喻哦！"
+        },
+        {
+          type: "mcq",
+          prompt: "请补全下面的【比喻】句，使画面更加形象优美：",
+          expr: "平静的湖面如同一面（                  ），清晰地倒映着蓝天和白云。",
+          options: [
+            "A. 吵闹的大鼓",
+            "B. 巨大的银镜",
+            "C. 奔腾的骏马",
+            "D. 绿色的草地"
+          ],
+          correctIndex: 1,
+          modelSentence: "平静的湖面如同一面巨大的银镜，清晰地倒映着蓝天和白云。",
+          explanation: "因为后文提到“清晰地倒映着蓝天和白云”，所以把平静的湖面比作“巨大的银镜”最为贴切生动！"
+        },
+        {
+          type: "mcq",
+          prompt: "下列哪一句运用了【排比】修辞手法造句？",
+          expr: "选择结构整齐、气势增强的排比句",
+          options: [
+            "A. 校园里的花真美，有红的，有黄的。",
+            "B. 爱心是一片照射在冬日的阳光，爱心是一泓出现在沙漠里的泉水，爱心是一首飘荡在夜空的歌谣。",
+            "C. 教室里静得连一根针掉在地上都能听见。",
+            "D. 小鸟在枝头快乐地唱着歌。"
+          ],
+          correctIndex: 1,
+          modelSentence: "爱心是一片照射在冬日的阳光，爱心是一泓出现在沙漠里的泉水，爱心是一首飘荡在夜空的歌谣。",
+          explanation: "B选项用三个结构相同、意思相关的“爱心是……”句式并列，构成排比句；C是夸张，D是拟人。"
+        },
+        {
+          type: "mcq",
+          prompt: "请选出运用了【夸张】修辞手法，突出天气非常炎热的句子：",
+          expr: "用夸张手法描写夏天的炎热",
+          options: [
+            "A. 夏天的中午太阳很大，大家都出了很多汗。",
+            "B. 夏天的太阳像一个大火球。",
+            "C. 烈日当空，柏油马路都快被晒化了，连空气都在冒着热气。",
+            "D. 夏天到了，天气越来越热了。"
+          ],
+          correctIndex: 2,
+          modelSentence: "烈日当空，柏油马路都快被晒化了，连空气都在冒着热气。",
+          explanation: "“柏油马路都快被晒化了”故意言过其实，突出夏天的酷热，这是非常生动的夸张造句！"
+        }
+      ],
+
+      // 第三关：词句重组小能手（词语排排坐）
+      3: [
+        {
+          type: "sequence",
+          prompt: "请把打乱的词语卡片重新排列，组成一句通顺的五年级优美句子：",
+          expr: "核心词：【晨雾】【笼罩着】【静谧的】【薄纱般】【小山村】",
+          words: ["薄纱般的", "晨雾", "静谧地", "笼罩着", "这座小山村。"],
+          shuffledIndices: [2, 4, 0, 3, 1],
+          modelSentence: "薄纱般的晨雾静谧地笼罩着这座小山村。",
+          explanation: "先确定定语+主语“薄纱般的晨雾”，再接状语+谓语“静谧地笼罩着”，最后是宾语“这座小山村。”"
+        },
+        {
+          type: "sequence",
+          prompt: "将下列词语连成一句描写阅读乐趣的完整句子：",
+          expr: "核心词：【一本好书】【津津有味】【图书馆里】【捧着】",
+          words: ["同学们", "在明亮的图书馆里", "捧着一本好书", "津津有味地", "阅读着。"],
+          shuffledIndices: [3, 1, 4, 0, 2],
+          modelSentence: "同学们在明亮的图书馆里捧着一本好书津津有味地阅读着。",
+          explanation: "按照“谁（同学们）+ 在哪里（在明亮的图书馆里）+ 做什么（捧着一本好书）+ 怎么样（津津有味地阅读着）”的语序排列。"
+        },
+        {
+          type: "sequence",
+          prompt: "请将以下词语按正确逻辑顺序排列成句：",
+          expr: "核心词：【只要】【坚持不懈】【梦想】【就能】",
+          words: ["只要我们", "坚持不懈地努力，", "就一定能", "实现心中的", "美好梦想！"],
+          shuffledIndices: [4, 2, 0, 3, 1],
+          modelSentence: "只要我们坚持不懈地努力，就一定能实现心中的美好梦想！",
+          explanation: "这是条件复句，“只要……”引出条件，“就一定能……”引出结果，层层推进，充满正能量！"
+        },
+        {
+          type: "sequence",
+          prompt: "把描写秋天景色的词语排成一句优美的句子：",
+          expr: "核心词：【金黄的落叶】【秋风】【翩翩起舞】【随着】",
+          words: ["一片片", "金黄的落叶", "随着凉爽的秋风", "在空中", "翩翩起舞。"],
+          shuffledIndices: [2, 4, 1, 0, 3],
+          modelSentence: "一片片金黄的落叶随着凉爽的秋风在空中翩翩起舞。",
+          explanation: "“一片片金黄的落叶”作主语，“随着凉爽的秋风在空中”交代背景与地点，“翩翩起舞”拟人化收尾。"
+        }
+      ],
+
+      // 第四关：成语与情景扩句
+      4: [
+        {
+          type: "mcq",
+          prompt: "请用成语【络绎不绝】造句，哪一句的语境使用最恰当？",
+          expr: "用成语【络绎不绝】造句",
+          options: [
+            "A. 深夜的图书馆里空无一人，来借书的同学络绎不绝。",
+            "B. 节假日的西湖景区游人如织，前来赏景的游客络绎不绝。",
+            "C. 天上的星星络绎不绝地眨着眼睛。",
+            "D. 教室里只有我一个人，显得络绎不绝。"
+          ],
+          correctIndex: 1,
+          modelSentence: "节假日的西湖景区游人如织，前来赏景的游客络绎不绝。",
+          explanation: "“络绎不绝”形容行人、车马来来往往，接连不断。B选项描写假日景区游客众多，使用非常准确！"
+        },
+        {
+          type: "mcq",
+          prompt: "把简单句“小鸟在唱歌”扩写成具体生动的句子，哪一句扩句最棒？",
+          expr: "扩句挑战：小鸟在唱歌。",
+          options: [
+            "A. 小鸟在树上唱歌。",
+            "B. 几只可爱的小鸟在唱歌。",
+            "C. 清晨，几只羽毛艳丽的小鸟站在翠绿的枝头上欢快地唱着动听的歌。",
+            "D. 小鸟一边唱歌一边在写作业。"
+          ],
+          correctIndex: 2,
+          modelSentence: "清晨，几只羽毛艳丽的小鸟站在翠绿的枝头上欢快地唱着动听的歌。",
+          explanation: "好的扩句可以加上时间（清晨）、外貌（羽毛艳丽）、地点（翠绿的枝头上）和神态（欢快地），且不能改变原句合理性（D不符合常理）。"
+        },
+        {
+          type: "mcq",
+          prompt: "请用成语【心旷神怡】完成情景造句：",
+          expr: "登上山顶，呼吸着清新的空气，望着远处的云海，令人感到（            ）。",
+          options: [
+            "A. 垂头丧气，十分懊恼",
+            "B. 心旷神怡，所有的烦恼都烟消云散了",
+            "C. 惊慌失措，不知如何是好",
+            "D. 迫不及待地想回家睡觉"
+          ],
+          correctIndex: 1,
+          modelSentence: "登上山顶，呼吸着清新的空气，望着远处的云海，令人感到心旷神怡，所有的烦恼都烟消云散了。",
+          explanation: "“心旷神怡”指心境开阔，精神愉快，非常适合用来描写登高望远或欣赏美景时的舒畅心情！"
+        },
+        {
+          type: "mcq",
+          prompt: "修改病句并选择最规范的造句表达：",
+          expr: "原病句：“通过这次语文造句冒险游戏，使我学会了很多好词好句。”",
+          options: [
+            "A. 通过这次语文造句冒险游戏，我学会了很多好词好句。",
+            "B. 通过这次语文造句冒险游戏，使我把很多好词好句学会了。",
+            "C. 这次语文造句冒险游戏，使我被学会了很多好词好句。",
+            "D. 通过使这次语文造句冒险游戏，我学会了很多好词好句。"
+          ],
+          correctIndex: 0,
+          modelSentence: "通过这次语文造句冒险游戏，我学会了很多好词好句。",
+          explanation: "原句同时使用了“通过……”和“使……”，导致句子缺少主语。删去“使”后，“我”成为主语，句子就完全通顺啦！"
+        }
+      ]
+    };
+
+    /*************************************************************************
+     * 2. Web Audio API 卡通音效合成器（无需外部音频文件）
+     *************************************************************************/
+    let audioCtx = null;
+    let isMuted = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSound(type) {
+      if (isMuted) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'jump') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(290, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.16);
+        gain.gain.setValueAtTime(0.17, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.17);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } else if (type === 'coin') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(987.77, now);
+        osc.frequency.setValueAtTime(1318.51, now + 0.07);
+        gain.gain.setValueAtTime(0.17, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.26);
+      } else if (type === 'block') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(230, now);
+        osc.frequency.exponentialRampToValueAtTime(460, now + 0.12);
+        gain.gain.setValueAtTime(0.13, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === 'correct') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.09);
+        osc.frequency.setValueAtTime(783.99, now + 0.18);
+        osc.frequency.setValueAtTime(1046.5, now + 0.27);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.46);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.linearRampToValueAtTime(155, now + 0.28);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.31);
+      } else if (type === 'stomp') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(130, now + 0.15);
+        gain.gain.setValueAtTime(0.19, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+    }
+
+    function toggleSound() {
+      isMuted = !isMuted;
+      document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
+      document.getElementById('soundLabel').textContent = isMuted ? '音效关' : '音效开';
+    }
+
+    /*************************************************************************
+     * 3. 游戏全局状态与学生数据管理
+     *************************************************************************/
+    const state = {
+      studentName: '',
+      studentClass: '',
+      gender: null, // 'boy' 或 'girl'
+      score: 0,
+      stars: 0,
+      lives: 5,
+      maxLives: 5,
+      currentStage: 1,
+      gameRunning: false,
+      paused: false,
+      startTime: null,
+      elapsedSeconds: 0,
+      stats: {
+        1: { attempted: 0, correct: 0 },
+        2: { attempted: 0, correct: 0 },
+        3: { attempted: 0, correct: 0 },
+        4: { attempted: 0, correct: 0 }
+      },
+      unlockedSentences: [],
+      activeQuestion: null,
+      activeBlock: null,
+      sequenceOrder: [] // 存储已选词语索引
+    };
+
+    /*************************************************************************
+     * 4. 学生信息登记与性别图标选择逻辑
+     *************************************************************************/
+    function selectGender(gender) {
+      initAudio();
+      playSound('coin');
+      state.gender = gender;
+
+      const boyBtn = document.getElementById('selectBoyBtn');
+      const girlBtn = document.getElementById('selectGirlBtn');
+      boyBtn.classList.remove('selected-boy');
+      girlBtn.classList.remove('selected-girl');
+
+      if (gender === 'boy') {
+        boyBtn.classList.add('selected-boy');
+      } else {
+        girlBtn.classList.add('selected-girl');
+      }
+      document.getElementById('regErrorBox').classList.add('hidden');
+    }
+
+    function startAdventure() {
+      initAudio();
+      const nameVal = document.getElementById('studentNameInput').value.trim();
+      const classVal = document.getElementById('studentClassInput').value.trim();
+      const errBox = document.getElementById('regErrorBox');
+
+      if (!nameVal) {
+        errBox.textContent = "请先填写你的姓名哦！✏️";
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (!classVal) {
+        errBox.textContent = "请填写你所在的班级（例如：五年级1班）！🏫";
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (!state.gender) {
+        errBox.textContent = "请点击选择男孩或女孩头像作为你的冒险主角！👦👧";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      state.studentName = nameVal;
+      state.studentClass = classVal;
+      state.startTime = Date.now();
+      state.gameRunning = true;
+
+      // 更新顶部 HUD 信息
+      document.getElementById('hudPlayerName').textContent = state.studentName;
+      document.getElementById('hudPlayerClass').textContent = state.studentClass;
+      document.getElementById('hudAvatarBadge').textContent = state.gender === 'boy' ? '👦' : '👧';
+      document.getElementById('hudAvatarBadge').className = state.gender === 'boy'
+        ? "w-8 h-8 rounded-full flex items-center justify-center text-lg bg-blue-100 border-2 border-blue-500"
+        : "w-8 h-8 rounded-full flex items-center justify-center text-lg bg-pink-100 border-2 border-pink-500";
+
+      // 切换到游戏界面
+      document.getElementById('registrationScreen').classList.add('hidden');
+      document.getElementById('gameContainer').classList.remove('hidden');
+
+      resizeCanvas();
+      loadStage(1);
+      updateHudMetrics();
+      playSound('correct');
+    }
+
+    /*************************************************************************
+     * 5. 马力欧式横版平台跳跃物理与关卡地图
+     *************************************************************************/
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const GRAVITY = 0.62;
+    const JUMP_FORCE = -13.6;
+    const MOVE_SPEED = 5.2;
+    const WORLD_WIDTH = 3400;
+    let GROUND_Y = 500;
+
+    const keys = { left: false, right: false, jump: false };
+
+    const player = {
+      x: 90,
+      y: 300,
+      w: 42,
+      h: 54,
+      vx: 0,
+      vy: 0,
+      onGround: false,
+      facing: 1,
+      walkFrame: 0,
+      invulnTimer: 0
+    };
+
+    let cameraX = 0;
+    let platforms = [];
+    let questionBlocks = [];
+    let springMushrooms = [];
+    let coins = [];
+    let enemies = [];
+    let particles = [];
+    let goalCastle = { x: 3120, y: 260, w: 80, h: 240 };
+
+    function loadStage(stageNum) {
+      state.currentStage = stageNum;
+      document.getElementById('hudStageTitle').textContent = STAGE_NAMES[stageNum];
+
+      GROUND_Y = Math.max(420, canvas.height - 95);
+
+      player.x = 90;
+      player.y = GROUND_Y - player.h - 10;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = false;
+      player.invulnTimer = 0;
+      cameraX = 0;
+
+      // 地面与悬浮砖块/云朵平台
+      platforms = [
+        { x: 0, y: GROUND_Y, w: 960, h: 160, type: 'ground' },
+        { x: 1060, y: GROUND_Y, w: 950, h: 160, type: 'ground' },
+        { x: 2110, y: GROUND_Y, w: 1300, h: 160, type: 'ground' },
+
+        { x: 300, y: GROUND_Y - 125, w: 160, h: 28, type: 'brick' },
+        { x: 650, y: GROUND_Y - 145, w: 150, h: 28, type: 'brick' },
+        { x: 940, y: GROUND_Y - 85, w: 130, h: 24, type: 'cloud' },
+        { x: 1250, y: GROUND_Y - 130, w: 180, h: 28, type: 'brick' },
+        { x: 1590, y: GROUND_Y - 175, w: 160, h: 28, type: 'brick' },
+        { x: 1990, y: GROUND_Y - 90, w: 130, h: 24, type: 'cloud' },
+        { x: 2330, y: GROUND_Y - 130, w: 180, h: 28, type: 'brick' },
+        { x: 2690, y: GROUND_Y - 155, w: 160, h: 28, type: 'brick' }
+      ];
+
+      // 弹簧蘑菇（踩上去弹得更高！）
+      springMushrooms = [
+        { x: 1510, y: GROUND_Y - 26, w: 38, h: 26, compress: 0 },
+        { x: 2610, y: GROUND_Y - 26, w: 38, h: 26, compress: 0 }
+      ];
+
+      // 每关 4 个神秘“？”造句方块
+      const stageQuestions = QUESTION_BANK[stageNum];
+      questionBlocks = [
+        { x: 360, y: GROUND_Y - 245, w: 46, h: 46, hit: false, bumpY: 0, question: stageQuestions[0] },
+        { x: 1315, y: GROUND_Y - 250, w: 46, h: 46, hit: false, bumpY: 0, question: stageQuestions[1] },
+        { x: 1645, y: GROUND_Y - 295, w: 46, h: 46, hit: false, bumpY: 0, question: stageQuestions[2] },
+        { x: 2745, y: GROUND_Y - 275, w: 46, h: 46, hit: false, bumpY: 0, question: stageQuestions[3] }
+      ];
+
+      // 可收集的魔法文字星星币
+      const coinWords = ["词", "句", "优", "美", "妙", "笔", "生", "花", "赞"];
+      coins = [
+        { x: 330, y: GROUND_Y - 170, r: 15, collected: false, label: coinWords[0] },
+        { x: 410, y: GROUND_Y - 170, r: 15, collected: false, label: coinWords[1] },
+        { x: 710, y: GROUND_Y - 190, r: 15, collected: false, label: coinWords[2] },
+        { x: 1000, y: GROUND_Y - 130, r: 15, collected: false, label: coinWords[3] },
+        { x: 1280, y: GROUND_Y - 175, r: 15, collected: false, label: coinWords[4] },
+        { x: 1380, y: GROUND_Y - 175, r: 15, collected: false, label: coinWords[5] },
+        { x: 2050, y: GROUND_Y - 135, r: 15, collected: false, label: coinWords[6] },
+        { x: 2390, y: GROUND_Y - 175, r: 15, collected: false, label: coinWords[7] },
+        { x: 2450, y: GROUND_Y - 175, r: 15, collected: false, label: coinWords[8] }
+      ];
+
+      // 可爱巡逻小怪兽：墨水怪 & 错别字史莱姆
+      enemies = [
+        { x: 520, y: GROUND_Y - 38, w: 42, h: 38, minX: 430, maxX: 870, vx: -1.6 - stageNum * 0.2, alive: true, name: "错别字" },
+        { x: 1450, y: GROUND_Y - 38, w: 42, h: 38, minX: 1120, maxX: 1890, vx: 1.7 + stageNum * 0.2, alive: true, name: "墨水怪" },
+        { x: 2500, y: GROUND_Y - 38, w: 42, h: 38, minX: 2200, maxX: 2920, vx: -1.8 - stageNum * 0.2, alive: true, name: "病句怪" }
+      ];
+
+      goalCastle = { x: 3110, y: GROUND_Y - 220, w: 90, h: 220 };
+      particles = [];
+    }
+
+    function spawnParticles(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.8) * 7,
+          size: 4 + Math.random() * 5,
+          color,
+          life: 28 + Math.random() * 14
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastBanner');
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2800);
+    }
+
+    /*************************************************************************
+     * 6. 物理更新与碰撞检测
+     *************************************************************************/
+    function updateGame() {
+      if (!state.gameRunning || state.paused) return;
+
+      state.elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+
+      // 左右移动
+      if (keys.left) {
+        player.vx = -MOVE_SPEED;
+        player.facing = -1;
+        player.walkFrame += 0.22;
+      } else if (keys.right) {
+        player.vx = MOVE_SPEED;
+        player.facing = 1;
+        player.walkFrame += 0.22;
+      } else {
+        player.vx *= 0.78;
+        if (Math.abs(player.vx) < 0.2) player.vx = 0;
+        player.walkFrame = 0;
+      }
+
+      // 跳跃
+      if (keys.jump && player.onGround) {
+        player.vy = JUMP_FORCE;
+        player.onGround = false;
+        playSound('jump');
+        spawnParticles(player.x + player.w / 2, player.y + player.h, '#ffffff', 6);
+      }
+
+      player.vy += GRAVITY;
+      if (player.vy > 15) player.vy = 15;
+
+      // X 轴移动与碰撞
+      player.x += player.vx;
+      if (player.x < 10) player.x = 10;
+      if (player.x > WORLD_WIDTH - player.w - 20) player.x = WORLD_WIDTH - player.w - 20;
+
+      for (const p of platforms) {
+        if (rectIntersect(player, p)) {
+          if (player.vx > 0) player.x = p.x - player.w;
+          else if (player.vx < 0) player.x = p.x + p.w;
+        }
+      }
+
+      // Y 轴移动与碰撞
+      player.y += player.vy;
+      player.onGround = false;
+
+      for (const p of platforms) {
+        if (rectIntersect(player, p)) {
+          if (player.vy > 0) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          } else if (player.vy < 0 && p.type !== 'cloud') {
+            player.y = p.y + p.h;
+            player.vy = 1;
+          }
+        }
+      }
+
+      // 弹簧蘑菇互动
+      for (const sm of springMushrooms) {
+        if (sm.compress > 0) sm.compress -= 0.5;
+        if (rectIntersect(player, sm) && player.vy > 0) {
+          player.y = sm.y - player.h;
+          player.vy = -18.5;
+          sm.compress = 8;
+          playSound('jump');
+          spawnParticles(sm.x + sm.w / 2, sm.y, '#F43F5E', 10);
+        }
+      }
+
+      // 顶起“？”造句方块
+      for (const qb of questionBlocks) {
+        if (qb.bumpY < 0) qb.bumpY += 1.5;
+        if (qb.bumpY > 0) qb.bumpY = 0;
+
+        if (rectIntersect(player, qb)) {
+          if (player.vy < 0 && player.y >= qb.y + qb.h - 18) {
+            player.y = qb.y + qb.h;
+            player.vy = 2;
+            triggerQuestionBlock(qb);
+          } else if (player.vy > 0 && player.y + player.h <= qb.y + 18) {
+            player.y = qb.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          } else {
+            if (player.vx > 0) player.x = qb.x - player.w;
+            else if (player.vx < 0) player.x = qb.x + qb.w;
+          }
+        }
+      }
+
+      // 掉落峡谷安全重生
+      if (player.y > canvas.height + 80) {
+        loseLife();
+        player.x = Math.max(80, player.x - 160);
+        player.y = GROUND_Y - player.h - 80;
+        player.vy = 0;
+      }
+
+      // 收集文字星星币
+      for (const c of coins) {
+        if (!c.collected) {
+          const coinBox = { x: c.x - c.r, y: c.y - c.r, w: c.r * 2, h: c.r * 2 };
+          if (rectIntersect(player, coinBox)) {
+            c.collected = true;
+            state.score += 15;
+            state.stars += 1;
+            updateHudMetrics();
+            playSound('coin');
+            spawnParticles(c.x, c.y, '#FACC15', 10);
+          }
+        }
+      }
+
+      // 巡逻怪兽（可踩扁消灭！）
+      if (player.invulnTimer > 0) player.invulnTimer--;
+      for (const en of enemies) {
+        if (!en.alive) continue;
+        en.x += en.vx;
+        if (en.x <= en.minX || en.x + en.w >= en.maxX) {
+          en.vx *= -1;
+        }
+
+        if (rectIntersect(player, en)) {
+          if (player.vy > 0 && player.y + player.h - player.vy <= en.y + 16) {
+            en.alive = false;
+            player.vy = -10.5;
+            state.score += 30;
+            updateHudMetrics();
+            playSound('stomp');
+            spawnParticles(en.x + en.w / 2, en.y + en.h / 2, '#A855F7', 14);
+            showToast(`💫 成功消灭【${en.name}】！+30 分`);
+          } else if (player.invulnTimer === 0) {
+            player.invulnTimer = 75;
+            player.vy = -8;
+            loseLife();
+            showToast(`💔 小心被【${en.name}】撞到啦！跳起来踩扁它吧！`);
+          }
+        }
+      }
+
+      // 抵达终点旗帜城堡
+      if (rectIntersect(player, goalCastle)) {
+        const allHit = questionBlocks.every(b => b.hit);
+        if (!allHit) {
+          player.x = goalCastle.x - player.w - 6;
+          showToast("💡 请先顶起本关所有的“？”方块完成造句挑战，再进入城堡哦！");
+        } else {
+          handleStageComplete();
+        }
+      }
+
+      // 更新粒子特效
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.25;
+        pt.life--;
+        if (pt.life <= 0) particles.splice(i, 1);
+      }
+
+      // 相机平滑跟随
+      const targetCamX = player.x - canvas.width * 0.34;
+      cameraX += (targetCamX - cameraX) * 0.12;
+      if (cameraX < 0) cameraX = 0;
+      if (cameraX > WORLD_WIDTH - canvas.width) cameraX = Math.max(0, WORLD_WIDTH - canvas.width);
+    }
+
+    function rectIntersect(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    function loseLife() {
+      playSound('wrong');
+      state.lives = Math.max(0, state.lives - 1);
+      updateHudMetrics();
+      if (state.lives === 0) {
+        state.paused = true;
+        openStatsModal(true, false);
+      }
+    }
+
+    function handleStageComplete() {
+      playSound('correct');
+      spawnParticles(goalCastle.x + 20, goalCastle.y + 40, '#22C55E', 24);
+      state.score += 150;
+      state.stars += 2;
+      updateHudMetrics();
+
+      if (state.currentStage < 4) {
+        showToast(`🎉 ${STAGE_NAMES[state.currentStage]} 通关成功！奖励 +150 分，进入下一关！`);
+        loadStage(state.currentStage + 1);
+      } else {
+        state.paused = true;
+        openStatsModal(true, true);
+      }
+    }
+
+    /*************************************************************************
+     * 7. 可爱卡通画布渲染器
+     *************************************************************************/
+    function drawGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. 马卡龙蓝天渐变背景
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      skyGrad.addColorStop(0, '#38BDF8');
+      skyGrad.addColorStop(0.65, '#BAE6FD');
+      skyGrad.addColorStop(1, '#E0F2FE');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 微笑小太阳
+      const sunX = canvas.width - 110;
+      const sunY = 95;
+      ctx.fillStyle = '#FDE047';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FACC15';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // 视差白云与远景小山丘
+      drawClouds();
+      drawHills();
+
+      ctx.save();
+      ctx.translate(-cameraX, 0);
+
+      // 2. 地面、砖块与云朵平台
+      for (const p of platforms) {
+        if (p.type === 'ground') {
+          ctx.fillStyle = '#B45309';
+          ctx.fillRect(p.x, p.y + 16, p.w, p.h - 16);
+          ctx.fillStyle = '#92400E';
+          for (let gx = p.x + 24; gx < p.x + p.w - 20; gx += 65) {
+            ctx.beginPath();
+            ctx.arc(gx, p.y + 48, 7, 0, Math.PI * 2);
+            ctx.arc(gx + 25, p.y + 76, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#22C55E';
+          roundRect(ctx, p.x, p.y, p.w, 22, 10, true, false);
+          ctx.fillStyle = '#16A34A';
+          ctx.fillRect(p.x, p.y + 16, p.w, 6);
+        } else if (p.type === 'brick') {
+          ctx.fillStyle = '#EA580C';
+          roundRect(ctx, p.x, p.y, p.w, p.h, 8, true, false);
+          ctx.strokeStyle = '#9A3412';
+          ctx.lineWidth = 3;
+          roundRect(ctx, p.x, p.y, p.w, p.h, 8, false, true);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y + p.h / 2);
+          ctx.lineTo(p.x + p.w, p.y + p.h / 2);
+          for (let bx = p.x + 35; bx < p.x + p.w; bx += 35) {
+            ctx.moveTo(bx, p.y);
+            ctx.lineTo(bx, p.y + p.h / 2);
+          }
+          ctx.stroke();
+        } else if (p.type === 'cloud') {
+          ctx.fillStyle = '#FFFFFF';
+          roundRect(ctx, p.x, p.y, p.w, p.h, 14, true, false);
+          ctx.strokeStyle = '#7DD3FC';
+          ctx.lineWidth = 3;
+          roundRect(ctx, p.x, p.y, p.w, p.h, 14, false, true);
+        }
+      }
+
+      // 3. 弹簧蘑菇
+      for (const sm of springMushrooms) {
+        const topY = sm.y + sm.compress;
+        // 蘑菇柄
+        ctx.fillStyle = '#FEF3C7';
+        roundRect(ctx, sm.x + 11, topY + 12, 16, sm.h - 12 - sm.compress, 4, true, false);
+        // 红色波点蘑菇伞盖
+        ctx.fillStyle = '#F43F5E';
+        ctx.beginPath();
+        ctx.ellipse(sm.x + sm.w / 2, topY + 12, 19, 12, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(sm.x + 12, topY + 7, 3, 0, Math.PI * 2);
+        ctx.arc(sm.x + 26, topY + 7, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 4. 神秘“？”造句方块
+      for (const qb of questionBlocks) {
+        const drawY = qb.y + qb.bumpY;
+        ctx.fillStyle = qb.hit ? '#94A3B8' : '#F59E0B';
+        roundRect(ctx, qb.x, drawY, qb.w, qb.h, 10, true, false);
+        ctx.strokeStyle = qb.hit ? '#475569' : '#B45309';
+        ctx.lineWidth = 3.5;
+        roundRect(ctx, qb.x, drawY, qb.w, qb.h, 10, false, true);
+
+        ctx.fillStyle = qb.hit ? '#CBD5E1' : '#FDE68A';
+        ctx.fillRect(qb.x + 5, drawY + 5, 4, 4);
+        ctx.fillRect(qb.x + qb.w - 9, drawY + 5, 4, 4);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 26px "ZCOOL KuaiLe", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(qb.hit ? '✓' : '?', qb.x + qb.w / 2, drawY + qb.h / 2 + 2);
+      }
+
+      // 5. 魔法汉字星星币
+      const bobOffset = Math.sin(Date.now() / 220) * 4;
+      for (const c of coins) {
+        if (c.collected) continue;
+        ctx.fillStyle = '#FACC15';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y + bobOffset, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#CA8A04';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#854D0E';
+        ctx.font = 'bold 13px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.label, c.x, c.y + bobOffset + 1);
+      }
+
+      // 6. 可爱巡逻怪兽（错别字史莱姆 / 墨水怪）
+      for (const en of enemies) {
+        if (!en.alive) continue;
+        const squish = Math.sin(Date.now() / 160) * 2;
+        ctx.fillStyle = '#8B5CF6';
+        ctx.beginPath();
+        ctx.moveTo(en.x, en.y + en.h);
+        ctx.quadraticCurveTo(en.x + en.w / 2, en.y - 8 + squish, en.x + en.w, en.y + en.h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#5B21B6';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // 呆萌大眼睛
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(en.x + 14, en.y + 18, 4.5, 0, Math.PI * 2);
+        ctx.arc(en.x + 28, en.y + 18, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(en.x + 14, en.y + 18, 2, 0, Math.PI * 2);
+        ctx.arc(en.x + 28, en.y + 18, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 头顶小标签
+        ctx.fillStyle = '#FEF08A';
+        ctx.font = 'bold 10px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(en.name, en.x + en.w / 2, en.y + 32);
+      }
+
+      // 7. 终点旗帜与童话小城堡
+      const allCleared = questionBlocks.every(b => b.hit);
+      // 城堡底座
+      ctx.fillStyle = '#F8FAFC';
+      roundRect(ctx, goalCastle.x + 22, goalCastle.y + 110, 68, 110, 8, true, false);
+      ctx.strokeStyle = '#64748B';
+      ctx.lineWidth = 3;
+      roundRect(ctx, goalCastle.x + 22, goalCastle.y + 110, 68, 110, 8, false, true);
+      // 红色尖屋顶
+      ctx.fillStyle = '#EF4444';
+      ctx.beginPath();
+      ctx.moveTo(goalCastle.x + 16, goalCastle.y + 112);
+      ctx.lineTo(goalCastle.x + 56, goalCastle.y + 68);
+      ctx.lineTo(goalCastle.x + 96, goalCastle.y + 112);
+      ctx.closePath();
+      ctx.fill();
+      // 拱形大门
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(goalCastle.x + 56, goalCastle.y + 195, 14, Math.PI, 0);
+      ctx.lineTo(goalCastle.x + 70, goalCastle.y + 220);
+      ctx.lineTo(goalCastle.x + 42, goalCastle.y + 220);
+      ctx.closePath();
+      ctx.fill();
+
+      // 旗杆与旗帜
+      ctx.fillStyle = '#E2E8F0';
+      roundRect(ctx, goalCastle.x, goalCastle.y, 10, goalCastle.h, 5, true, false);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = allCleared ? '#22C55E' : '#F43F5E';
+      ctx.beginPath();
+      ctx.moveTo(goalCastle.x + 10, goalCastle.y + 12);
+      ctx.lineTo(goalCastle.x + 76, goalCastle.y + 34);
+      ctx.lineTo(goalCastle.x + 10, goalCastle.y + 56);
+      ctx.closePath();
+      ctx.fill();
+
+      // 8. 绘制男孩或女孩主角
+      drawPlayerCharacter();
+
+      // 9. 粒子特效
+      for (const pt of particles) {
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawClouds() {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      const cloudPositions = [120, 480, 860, 1280, 1700, 2150, 2600];
+      for (const cx of cloudPositions) {
+        const screenX = ((cx - cameraX * 0.3) % (canvas.width + 260) + (canvas.width + 260)) % (canvas.width + 260) - 100;
+        ctx.beginPath();
+        ctx.arc(screenX, 85, 26, 0, Math.PI * 2);
+        ctx.arc(screenX + 24, 78, 32, 0, Math.PI * 2);
+        ctx.arc(screenX + 52, 86, 24, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawHills() {
+      ctx.fillStyle = '#86EFAC';
+      const hillPositions = [80, 560, 1100, 1650, 2200];
+      for (const hx of hillPositions) {
+        const screenX = ((hx - cameraX * 0.45) % (canvas.width + 450) + (canvas.width + 450)) % (canvas.width + 450) - 180;
+        ctx.beginPath();
+        ctx.arc(screenX, GROUND_Y + 20, 150, Math.PI, 0);
+        ctx.fill();
+      }
+    }
+
+    function drawPlayerCharacter() {
+      if (player.invulnTimer > 0 && Math.floor(player.invulnTimer / 5) % 2 === 0) return;
+
+      const isBoy = state.gender !== 'girl';
+      const cx = player.x + player.w / 2;
+      const topY = player.y;
+      const legSwing = Math.sin(player.walkFrame) * 5;
+
+      ctx.save();
+      ctx.translate(cx, topY);
+      if (player.facing === -1) ctx.scale(-1, 1);
+
+      // 小鞋子
+      ctx.fillStyle = '#1E293B';
+      roundRect(ctx, -12 + legSwing, 42, 10, 12, 4, true, false);
+      roundRect(ctx, 2 - legSwing, 42, 10, 12, 4, true, false);
+
+      // 上衣（男生蓝色 / 女生粉色）
+      ctx.fillStyle = isBoy ? '#2563EB' : '#EC4899';
+      roundRect(ctx, -14, 24, 28, 22, 8, true, false);
+      ctx.strokeStyle = isBoy ? '#1E3A8A' : '#9D174D';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 女生双马尾
+      if (!isBoy) {
+        ctx.fillStyle = '#3B2F2F';
+        ctx.beginPath();
+        ctx.arc(-18, 12, 7, 0, Math.PI * 2);
+        ctx.arc(18, 12, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 头部
+      ctx.fillStyle = '#FED7AA';
+      roundRect(ctx, -16, 0, 32, 28, 13, true, false);
+      ctx.strokeStyle = '#9A3412';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 帽子或发箍
+      if (isBoy) {
+        ctx.fillStyle = '#EF4444';
+        roundRect(ctx, -16, -2, 32, 11, 6, true, false);
+        ctx.fillRect(2, 4, 20, 5);
+      } else {
+        ctx.fillStyle = '#3B2F2F';
+        roundRect(ctx, -16, -1, 32, 10, 6, true, false);
+        ctx.fillStyle = '#F43F5E';
+        ctx.fillRect(-14, 4, 28, 4);
+      }
+
+      // 大眼睛与红晕
+      ctx.fillStyle = '#0F172A';
+      ctx.beginPath();
+      ctx.arc(4, 14, 2.6, 0, Math.PI * 2);
+      ctx.arc(12, 14, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#FB7185';
+      ctx.beginPath();
+      ctx.arc(8, 19, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function gameLoop() {
+      updateGame();
+      if (state.gameRunning) {
+        drawGame();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    /*************************************************************************
+     * 8. 五年级造句挑战弹窗交互逻辑
+     *************************************************************************/
+    function triggerQuestionBlock(qb) {
+      qb.bumpY = -12;
+      playSound('block');
+      spawnParticles(qb.x + qb.w / 2, qb.y, '#FBBF24', 12);
+
+      if (qb.hit) return;
+
+      state.paused = true;
+      keys.left = false;
+      keys.right = false;
+      keys.jump = false;
+
+      state.activeBlock = qb;
+      state.activeQuestion = qb.question;
+      state.sequenceOrder = [];
+
+      renderQuestionModalContent(qb.question);
+      document.getElementById('questionModal').classList.remove('hidden');
+    }
+
+    function renderQuestionModalContent(q) {
+      document.getElementById('qTopicBadge').textContent = STAGE_NAMES[state.currentStage];
+      document.getElementById('qInstructionText').textContent = q.prompt;
+      document.getElementById('qExpressionText').textContent = q.expr;
+
+      document.getElementById('qFeedbackBox').classList.add('hidden');
+      document.getElementById('qContinueBtn').classList.add('hidden');
+
+      const optionsGrid = document.getElementById('qOptionsGrid');
+      const seqBuilder = document.getElementById('qSequenceBuilder');
+
+      if (q.type === 'mcq') {
+        optionsGrid.classList.remove('hidden');
+        seqBuilder.classList.add('hidden');
+        optionsGrid.innerHTML = '';
+
+        q.options.forEach((optText, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = "btn-cartoon p-3.5 rounded-2xl bg-white hover:bg-sky-50 border-3 border-slate-300 hover:border-sky-400 text-slate-800 font-extrabold text-sm sm:text-base text-left transition-all cursor-pointer";
+          btn.textContent = optText;
+          btn.onclick = () => handleMcqAnswer(idx, btn);
+          optionsGrid.appendChild(btn);
+        });
+      } else if (q.type === 'sequence') {
+        optionsGrid.classList.add('hidden');
+        seqBuilder.classList.remove('hidden');
+        renderSequenceBuilder(q);
+      }
+    }
+
+    function handleMcqAnswer(selectedIdx, clickedBtn) {
+      const q = state.activeQuestion;
+      const buttons = document.querySelectorAll('#qOptionsGrid button');
+      buttons.forEach(b => b.disabled = true);
+
+      const isCorrect = selectedIdx === q.correctIndex;
+      buttons[q.correctIndex].classList.remove('bg-white', 'border-slate-300');
+      buttons[q.correctIndex].classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900');
+
+      if (!isCorrect) {
+        clickedBtn.classList.remove('bg-white', 'border-slate-300');
+        clickedBtn.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+      }
+
+      finalizeQuestionAttempt(isCorrect);
+    }
+
+    // 第三关：词句重组“词语排排坐”交互
+    function renderSequenceBuilder(q) {
+      const selectedList = document.getElementById('seqSelectedList');
+      const poolList = document.getElementById('seqPoolList');
+      selectedList.innerHTML = '';
+      poolList.innerHTML = '';
+
+      if (state.sequenceOrder.length === 0) {
+        selectedList.innerHTML = '<span class="text-xs text-indigo-400 font-bold px-2">请点击下方词语卡片开始造句……</span>';
+      } else {
+        state.sequenceOrder.forEach((wordIdx, pos) => {
+          const chip = document.createElement('span');
+          chip.className = "bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-sm flex items-center gap-1.5 shadow-sm";
+          chip.innerHTML = `<span class="bg-white text-indigo-700 w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px]">${pos + 1}</span><span>${q.words[wordIdx]}</span>`;
+          selectedList.appendChild(chip);
+        });
+      }
+
+      q.shuffledIndices.forEach(wordIdx => {
+        if (!state.sequenceOrder.includes(wordIdx)) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = "btn-cartoon px-3.5 py-2 rounded-xl bg-white hover:bg-indigo-50 border-2 border-indigo-300 text-slate-800 font-extrabold text-sm cursor-pointer";
+          btn.textContent = q.words[wordIdx];
+          btn.onclick = () => {
+            playSound('coin');
+            state.sequenceOrder.push(wordIdx);
+            renderSequenceBuilder(q);
+          };
+          poolList.appendChild(btn);
+        }
+      });
+
+      document.getElementById('btnSubmitSequence').disabled = state.sequenceOrder.length !== q.words.length;
+    }
+
+    function undoSequenceStep() {
+      if (state.sequenceOrder.length > 0 && state.activeQuestion) {
+        state.sequenceOrder.pop();
+        renderSequenceBuilder(state.activeQuestion);
+      }
+    }
+
+    function resetSequenceSelection() {
+      state.sequenceOrder = [];
+      if (state.activeQuestion) renderSequenceBuilder(state.activeQuestion);
+    }
+
+    function submitSequenceAnswer() {
+      const q = state.activeQuestion;
+      const isCorrect = state.sequenceOrder.every((val, idx) => val === idx);
+      document.getElementById('btnSubmitSequence').disabled = true;
+      finalizeQuestionAttempt(isCorrect);
+    }
+
+    function finalizeQuestionAttempt(isCorrect) {
+      const q = state.activeQuestion;
+      const topicStats = state.stats[state.currentStage];
+      topicStats.attempted += 1;
+
+      const fbBox = document.getElementById('qFeedbackBox');
+      const fbIcon = document.getElementById('qFeedbackIcon');
+      const fbTitle = document.getElementById('qFeedbackTitle');
+      const fbModel = document.getElementById('qModelSentence');
+      const fbExp = document.getElementById('qFeedbackExplanation');
+
+      fbBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-400', 'text-emerald-900', 'bg-rose-50', 'border-rose-400', 'text-rose-900');
+
+      if (isCorrect) {
+        topicStats.correct += 1;
+        state.score += 100;
+        state.stars += 1;
+        if (state.activeBlock) state.activeBlock.hit = true;
+        if (!state.unlockedSentences.includes(q.modelSentence)) {
+          state.unlockedSentences.push(q.modelSentence);
+        }
+        playSound('correct');
+
+        fbBox.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-900');
+        fbIcon.textContent = '🎉';
+        fbTitle.textContent = "太棒了！造句准确又优美（+100分 🌟）";
+      } else {
+        playSound('wrong');
+        document.getElementById('questionCard').classList.add('animate-shake');
+        setTimeout(() => document.getElementById('questionCard').classList.remove('animate-shake'), 450);
+
+        fbBox.classList.add('bg-rose-50', 'border-rose-400', 'text-rose-900');
+        fbIcon.textContent = '💡';
+        fbTitle.textContent = "差一点点哦，看看佳句解析吧！";
+        if (state.activeBlock) state.activeBlock.hit = true;
+        loseLife();
+      }
+
+      fbModel.textContent = `✨ 范例佳句：${q.modelSentence}`;
+      fbExp.textContent = `📖 解析：${q.explanation}`;
+      updateHudMetrics();
+      document.getElementById('qContinueBtn').classList.remove('hidden');
+    }
+
+    function closeQuestionModal() {
+      document.getElementById('questionModal').classList.add('hidden');
+      state.activeQuestion = null;
+      state.activeBlock = null;
+      if (state.lives > 0) {
+        state.paused = false;
+      }
+    }
+
+    /*************************************************************************
+     * 9. 选关弹窗与统计成绩单逻辑
+     *************************************************************************/
+    function openStageSelectModal() {
+      state.paused = true;
+      const list = document.getElementById('stageListContainer');
+      list.innerHTML = '';
+
+      for (let s = 1; s <= 4; s++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isCurrent = state.currentStage === s;
+        btn.className = `btn-cartoon w-full p-3.5 rounded-2xl border-3 flex items-center justify-between font-bold text-left cursor-pointer ${
+          isCurrent
+            ? 'bg-indigo-100 border-indigo-500 text-indigo-900'
+            : 'bg-slate-50 hover:bg-sky-50 border-slate-300 text-slate-800'
+        }`;
+        btn.innerHTML = `
+          <span>${STAGE_NAMES[s]}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full ${isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'}">
+            已答对 ${state.stats[s].correct}/${state.stats[s].attempted} 题
+          </span>
+        `;
+        btn.onclick = () => {
+          loadStage(s);
+          closeStageSelectModal();
+        };
+        list.appendChild(btn);
+      }
+
+      document.getElementById('stageSelectModal').classList.remove('hidden');
+    }
+
+    function closeStageSelectModal() {
+      document.getElementById('stageSelectModal').classList.add('hidden');
+      state.paused = false;
+    }
+
+    function updateHudMetrics() {
+      let heartsStr = '';
+      for (let i = 0; i < state.maxLives; i++) {
+        heartsStr += i < state.lives ? '❤️' : '🤍';
+      }
+      document.getElementById('hudLives').textContent = heartsStr;
+      document.getElementById('hudScore').textContent = state.score;
+      document.getElementById('hudStars').textContent = state.stars;
+      document.getElementById('hudAccuracyVal').textContent = `${calculateOverallAccuracy()}%`;
+    }
+
+    function calculateOverallAccuracy() {
+      let totalAtt = 0;
+      let totalCorr = 0;
+      for (let s = 1; s <= 4; s++) {
+        totalAtt += state.stats[s].attempted;
+        totalCorr += state.stats[s].correct;
+      }
+      return totalAtt === 0 ? 100 : Math.round((totalCorr / totalAtt) * 100);
+    }
+
+    function formatTime(secs) {
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function openStatsModal(isEndOfRun = false, isVictory = false) {
+      state.paused = true;
+
+      document.getElementById('statsStudentName').textContent = state.studentName;
+      document.getElementById('statsStudentClass').textContent = state.studentClass;
+      document.getElementById('statsAvatarIcon').textContent = state.gender === 'boy' ? '👦' : '👧';
+
+      document.getElementById('statScoreVal').textContent = state.score;
+      document.getElementById('statAccVal').textContent = `${calculateOverallAccuracy()}%`;
+      document.getElementById('statStarsVal').textContent = state.stars;
+      document.getElementById('statTimeVal').textContent = formatTime(state.elapsedSeconds);
+
+      const banner = document.getElementById('statsCompletionBanner');
+      const resumeBtn = document.getElementById('btnResumeFromStats');
+
+      if (isEndOfRun) {
+        banner.classList.remove('hidden');
+        document.getElementById('statsBannerTitle').textContent = isVictory
+          ? `🏆 祝贺 ${state.studentName} 同学通关成功，荣获“五年级造句小达人”称号！`
+          : `💪 加油 ${state.studentName} 同学！来看看你的造句闯关分析吧`;
+        document.getElementById('statsBannerSub').textContent = isVictory
+          ? "你已经成功征服了关联词、修辞手法、词句重组和成语扩句四大关卡！"
+          : "爱心用完啦，点击下方“再玩一次”即可重新挑战哦！";
+        resumeBtn.classList.add('hidden');
+      } else {
+        banner.classList.add('hidden');
+        resumeBtn.classList.remove('hidden');
+      }
+
+      // 渲染四大维度进度条
+      const container = document.getElementById('topicBreakdownList');
+      container.innerHTML = '';
+      const barColors = ['bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500'];
+
+      for (let t = 1; t <= 4; t++) {
+        const st = state.stats[t];
+        const pct = st.attempted === 0 ? 0 : Math.round((st.correct / st.attempted) * 100);
+
+        const row = document.createElement('div');
+        row.className = "bg-slate-50 border-2 border-slate-200 rounded-2xl p-3";
+        row.innerHTML = `
+          <div class="flex items-center justify-between text-xs sm:text-sm font-extrabold text-slate-700 mb-1.5">
+            <span>${TOPIC_LABELS[t]}</span>
+            <span class="text-slate-900">答对 ${st.correct} / ${st.attempted} 题（${pct}%）</span>
+          </div>
+          <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden">
+            <div class="${barColors[t - 1]} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+
+      // 渲染本次解锁的佳句列表
+      const sentList = document.getElementById('unlockedSentencesList');
+      if (state.unlockedSentences.length > 0) {
+        sentList.innerHTML = state.unlockedSentences
+          .map((s, idx) => `<div class="bg-white px-3 py-1.5 rounded-xl border border-slate-200">🌟 ${idx + 1}. ${s}</div>`)
+          .join('');
+      }
+
+      document.getElementById('statsModal').classList.remove('hidden');
+    }
+
+    function closeStatsModal() {
+      document.getElementById('statsModal').classList.add('hidden');
+      if (state.lives > 0) {
+        state.paused = false;
+      }
+    }
+
+    function restartFullGame() {
+      state.score = 0;
+      state.stars = 0;
+      state.lives = state.maxLives;
+      state.startTime = Date.now();
+      state.elapsedSeconds = 0;
+      state.unlockedSentences = [];
+      state.stats = {
+        1: { attempted: 0, correct: 0 },
+        2: { attempted: 0, correct: 0 },
+        3: { attempted: 0, correct: 0 },
+        4: { attempted: 0, correct: 0 }
+      };
+      document.getElementById('statsModal').classList.add('hidden');
+      state.paused = false;
+      loadStage(1);
+      updateHudMetrics();
+    }
+
+    /*************************************************************************
+     * 10. 键盘、触控与窗口尺寸适配事件
+     *************************************************************************/
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      GROUND_Y = Math.max(420, canvas.height - 95);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        keys.jump = true;
+        if (state.gameRunning && !state.paused) e.preventDefault();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
+    });
+
+    function bindHoldButton(btnId, keyName) {
+      const btn = document.getElementById(btnId);
+      const start = (e) => { e.preventDefault(); initAudio(); keys[keyName] = true; };
+      const end = (e) => { e.preventDefault(); keys[keyName] = false; };
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', end, { passive: false });
+      btn.addEventListener('touchcancel', end, { passive: false });
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', end);
+      btn.addEventListener('mouseleave', end);
+    }
+
+    bindHoldButton('btnTouchLeft', 'left');
+    bindHoldButton('btnTouchRight', 'right');
+    bindHoldButton('btnTouchJump', 'jump');
+
+    window.onload = function () {
+      resizeCanvas();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
